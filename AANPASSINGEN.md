@@ -1,6 +1,6 @@
 # Aanpassingen aan de T-Rex Runner
 
-Het origineel is het dinospel uit Google Chrome dat je krijgt als je geen internet hebt. Ik heb het spel op zeven punten aangepast. De wijzigingen staan in `index.js`, `index.css` en `index.html` en zijn in de code te vinden met de zoekterm `AANPASSING`.
+Het origineel is het dinospel uit Google Chrome dat je krijgt als je geen internet hebt. Ik heb het spel op acht punten aangepast. De wijzigingen staan in `index.js`, `index.css` en `index.html` en zijn in de code te vinden met de zoekterm `AANPASSING`.
 
 | # | Aanpassing | Wat het doet |
 |---|------------|--------------|
@@ -11,6 +11,7 @@ Het origineel is het dinospel uit Google Chrome dat je krijgt als je geen intern
 | 5 | Achtergrondkleur | Lichtblauwe lucht in plaats van een witte achtergrond |
 | 6 | Moeilijkheidsmenu | Kies tussen Makkelijk, Normaal en Moeilijk |
 | 7 | Beginscherm | Titelscherm met moeilijkheid, besturing, highscores en een START-knop |
+| 8 | Cache busting | Na een update laadt de browser altijd de nieuwe CSS en JavaScript |
 
 ---
 
@@ -167,6 +168,23 @@ html, body {
 - **Highscores (`toonHighscoreLijst`):** een `for...in`-lus loopt langs alle moeilijkheden in `Runner.difficulties`. Voor elke moeilijkheid wordt de score uit `localStorage` gelezen en met `getActualDistance` van pixels omgerekend naar de score die je in het spel ziet. Met `insertRow()` en `insertCell()` komt elke score als nieuwe rij in de tabel.
 - **Refactoring (`beginSpel`):** eerst stond de code om het spel te starten midden in `onKeyDown`. De START-knop moet precies hetzelfde doen. Daarom staat die code nu in een eigen functie `beginSpel()`, die zowel door de spatiebalk als door de knop wordt aangeroepen. Code op die manier herschikken zonder dat het gedrag verandert, heet **refactoring**. Zo hoef je dezelfde code niet twee keer te schrijven (het *DRY*-principe: *Don't Repeat Yourself*, herhaal jezelf niet).
 - Na een game over kom je niet terug op het beginscherm. Je ziet dan het kleine menu onderaan (aanpassing 6), zodat je snel opnieuw kunt spelen.
+
+---
+
+## Aanpassing 8: cache busting (versienummer)
+
+**Probleem:** na het online zetten van het beginscherm zag de website er kapot uit: de tekst stond er wel, maar zonder opmaak, en de dino en de highscores ontbraken. Wat was er aan de hand? GitHub Pages laat browsers een kopie van bestanden 10 minuten bewaren. Zo'n bewaarde kopie heet de **cache**. De browser haalde de nieuwe `index.html` op, maar gebruikte nog de **oude** `index.css` en `index.js` uit de cache. Nieuwe HTML met oude CSS en JavaScript past niet bij elkaar.
+
+**Oplossing:** in `index.html` staat nu een versienummer achter de bestandsnamen:
+
+```html
+<link rel="stylesheet" href="index.css?v=7">
+<script src="index.js?v=7"></script>
+```
+
+Het stuk na het vraagteken (`?v=7`) heet een **querystring**. De server negeert het en stuurt gewoon `index.css`. Maar voor de browser is `index.css?v=7` een ander adres dan `index.css`, dus er is nog geen kopie in de cache en de browser haalt het nieuwe bestand op. Deze techniek heet **cache busting**.
+
+**Let op bij een volgende update:** verhoog het getal (bijvoorbeeld naar `?v=8`) als je `index.css` of `index.js` verandert.
 
 ---
 
