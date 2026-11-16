@@ -151,6 +151,7 @@ html, body {
   font-size: clamp(20px, 6vw, 36px); /* past zich aan de schermbreedte aan */
   margin: 8px 0;
   letter-spacing: 2px;
+  line-height: 1.5; /* ruimte tussen de regels als de titel afbreekt */
 }
 
 .ondertitel {

@@ -1,6 +1,6 @@
 # Aanpassingen aan de T-Rex Runner
 
-Het origineel is het dinospel uit Google Chrome dat je krijgt als je geen internet hebt. Ik heb het spel op acht punten aangepast. De wijzigingen staan in `index.js`, `index.css` en `index.html` en zijn in de code te vinden met de zoekterm `AANPASSING`.
+Het origineel is het dinospel uit Google Chrome dat je krijgt als je geen internet hebt. Ik heb het spel op negen punten aangepast. De wijzigingen staan in `index.js`, `index.css` en `index.html` en zijn in de code te vinden met de zoekterm `AANPASSING`.
 
 | # | Aanpassing | Wat het doet |
 |---|------------|--------------|
@@ -12,6 +12,7 @@ Het origineel is het dinospel uit Google Chrome dat je krijgt als je geen intern
 | 6 | Moeilijkheidsmenu | Kies tussen Makkelijk, Normaal en Moeilijk |
 | 7 | Beginscherm | Titelscherm met moeilijkheid, besturing, highscores en een START-knop |
 | 8 | Cache busting | Na een update laadt de browser altijd de nieuwe CSS en JavaScript |
+| 9 | Nieuwe naam | Het spel heet nu **Pirate Token Hunt** |
 
 ---
 
@@ -185,6 +186,20 @@ html, body {
 Het stuk na het vraagteken (`?v=7`) heet een **querystring**. De server negeert het en stuurt gewoon `index.css`. Maar voor de browser is `index.css?v=7` een ander adres dan `index.css`, dus er is nog geen kopie in de cache en de browser haalt het nieuwe bestand op. Deze techniek heet **cache busting**.
 
 **Let op bij een volgende update:** verhoog het getal (bijvoorbeeld naar `?v=8`) als je `index.css` of `index.js` verandert.
+
+---
+
+## Aanpassing 9: nieuwe naam, Pirate Token Hunt
+
+**Idee:** het spel krijgt een eigen naam in plaats van de naam van het origineel van Chrome.
+
+**Hoe:** de naam staat op twee plekken in `index.html`:
+- `<title>Pirate Token Hunt</title>`: de tekst op het tabblad van de browser. Daar stond eerst nog "chrome easter egg: t-rex runner".
+- `<h1 class="titel">PIRATE TOKEN HUNT</h1>`: de grote titel op het beginscherm. Die is in hoofdletters geschreven, net als de score in het spel. Dat past bij de pixel-stijl.
+
+Omdat dit een HTML-wijziging is, hoeft er geen JavaScript te veranderen. Het versienummer van de CSS en JS is toch verhoogd naar `?v=8` (zie aanpassing 8), zodat alle bezoekers zeker de nieuwste versie krijgen.
+
+Op een telefoon past de naam niet op één regel. De browser breekt de titel dan vanzelf af bij een spatie, zodat hij over twee regels staat.
 
 ---
 
