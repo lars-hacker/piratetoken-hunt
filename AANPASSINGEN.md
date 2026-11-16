@@ -1,6 +1,6 @@
 # Aanpassingen aan de T-Rex Runner
 
-Het origineel is het dinospel uit Google Chrome dat je krijgt als je geen internet hebt. Ik heb het spel op zes punten aangepast. De wijzigingen staan in `index.js`, `index.css` en `index.html` en zijn in de code te vinden met de zoekterm `AANPASSING`.
+Het origineel is het dinospel uit Google Chrome dat je krijgt als je geen internet hebt. Ik heb het spel op zeven punten aangepast. De wijzigingen staan in `index.js`, `index.css` en `index.html` en zijn in de code te vinden met de zoekterm `AANPASSING`.
 
 | # | Aanpassing | Wat het doet |
 |---|------------|--------------|
@@ -10,6 +10,7 @@ Het origineel is het dinospel uit Google Chrome dat je krijgt als je geen intern
 | 4 | Opgeslagen highscore | Je highscore blijft bewaard, ook nadat je de pagina sluit |
 | 5 | Achtergrondkleur | Lichtblauwe lucht in plaats van een witte achtergrond |
 | 6 | Moeilijkheidsmenu | Kies tussen Makkelijk, Normaal en Moeilijk |
+| 7 | Beginscherm | Titelscherm met moeilijkheid, besturing, highscores en een START-knop |
 
 ---
 
@@ -148,6 +149,27 @@ html, body {
 
 ---
 
+## Aanpassing 7: beginscherm
+
+**Idee:** als je de pagina opent, zie je eerst een titelscherm in plaats van meteen het spel. Op dat scherm staan:
+- de titel **T-REX RUNNER** in een pixel-lettertype (*Press Start 2P* van Google Fonts);
+- een grote dino die op en neer huppelt;
+- de knoppen voor de moeilijkheid (aanpassing 6);
+- een grote **START**-knop (of druk op spatie);
+- een uitleg van de besturing;
+- je highscores voor alle drie de moeilijkheden.
+
+**Hoe het werkt:**
+
+- **HTML:** een `<div id="beginscherm">` die de hele pagina bedekt. De moeilijkheidsknoppen hebben dezelfde class `menu-knop` als in het kleine menu. `initMenu()` zoekt alle knoppen met `querySelectorAll('.menu-knop')` op, dus de knoppen op het beginscherm werken meteen, zonder extra code. Ook de gekozen knop wordt op beide plekken gemarkeerd.
+- **CSS:** `position: fixed` met `inset: 0` (boven, rechts, onder en links 0) laat het scherm de hele pagina bedekken. Met `z-index: 20` ligt het boven het spel. De achtergrond is een **kleurverloop** (`linear-gradient`) van het luchtblauw naar wit. Het huppelen is een CSS-animatie (`@keyframes huppel`) die de dino met `translateY` 12 pixels omhoog en weer omlaag schuift. De titel gebruikt `clamp(20px, 6vw, 36px)`: de lettergrootte schaalt mee met de schermbreedte, maar blijft tussen 20 en 36 pixels. Met `flex-wrap: wrap` staan de vakken Besturing en Highscores naast elkaar op een computer en onder elkaar op een telefoon.
+- **De dino tekenen (`tekenBeginschermDino`):** het spel heeft geen los plaatje van de dino. Alle afbeeldingen staan samen in één grote afbeelding, een **sprite sheet**. Met `drawImage` knip je daar een stukje uit: vanaf positie x = 1766, y = 4, een vlak van 88 × 94 pixels. `image-rendering: pixelated` zorgt dat de pixels scherp blijven en niet wazig worden.
+- **Highscores (`toonHighscoreLijst`):** een `for...in`-lus loopt langs alle moeilijkheden in `Runner.difficulties`. Voor elke moeilijkheid wordt de score uit `localStorage` gelezen en met `getActualDistance` van pixels omgerekend naar de score die je in het spel ziet. Met `insertRow()` en `insertCell()` komt elke score als nieuwe rij in de tabel.
+- **Refactoring (`beginSpel`):** eerst stond de code om het spel te starten midden in `onKeyDown`. De START-knop moet precies hetzelfde doen. Daarom staat die code nu in een eigen functie `beginSpel()`, die zowel door de spatiebalk als door de knop wordt aangeroepen. Code op die manier herschikken zonder dat het gedrag verandert, heet **refactoring**. Zo hoef je dezelfde code niet twee keer te schrijven (het *DRY*-principe: *Don't Repeat Yourself*, herhaal jezelf niet).
+- Na een game over kom je niet terug op het beginscherm. Je ziet dan het kleine menu onderaan (aanpassing 6), zodat je snel opnieuw kunt spelen.
+
+---
+
 ## Testen
 
 Ik heb het spel automatisch getest in een browser (Playwright, Chromium):
@@ -164,8 +186,14 @@ Ik heb het spel automatisch getest in een browser (Playwright, Chromium):
 | Menu verdwijnt bij start en komt terug bij game over | ✔ |
 | Toets 1 na game over | Makkelijk: 5 levens, snelheid 5 ✔ |
 | Highscore apart per moeilijkheid | `t-rex-highscore-moeilijk` ✔ |
+| Beginscherm zichtbaar bij laden, kleine menu verborgen | ✔ |
+| Toets 3 op het beginscherm | Moeilijk gekozen ✔ |
+| Klik op START | beginscherm weg, spel loopt, dino springt ✔ |
+| Spatie op het beginscherm | spel start ✔ |
+| Highscoretabel (opgeslagen 4000 pixels op Normaal) | toont 100 ✔ |
+| Beginscherm op telefoonformaat (390 px breed) | vakken onder elkaar, alles leesbaar ✔ |
 | JavaScript-fouten | geen ✔ |
 
 ## Spelen
 
-Open `index.html` in een browser. Kies eerst een moeilijkheid (klik, of druk op 1, 2 of 3). Druk op **spatie** of **pijltje omhoog** om te springen (twee keer voor een dubbele sprong) en op **pijltje omlaag** om te bukken.
+Open `index.html` in een browser. Kies op het beginscherm een moeilijkheid (klik, of druk op 1, 2 of 3) en klik op **START**. Druk op **spatie** of **pijltje omhoog** om te springen (twee keer voor een dubbele sprong) en op **pijltje omlaag** om te bukken.

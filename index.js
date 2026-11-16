@@ -752,16 +752,10 @@
                 if (!this.crashed && (Runner.keycodes.JUMP[e.keyCode] ||
                     e.type == Runner.events.TOUCHSTART)) {
                     if (!this.playing) {
-                        this.showMenu(false); // AANPASSING 6
-                        this.loadSounds();
-                        this.playing = true;
-                        this.update();
-                        if (window.errorPageController) {
-                            errorPageController.trackEasterEgg();
-                        }
-                    }
-                    //  Play sound effect and jump on starting the game for the first time.
-                    if (!this.tRex.jumping && !this.tRex.ducking) {
+                        // AANPASSING 7: starten staat nu in een eigen functie,
+                        // zodat de START-knop dezelfde code kan gebruiken.
+                        this.beginSpel();
+                    } else if (!this.tRex.jumping && !this.tRex.ducking) {
                         this.playSound(this.soundFx.BUTTON_PRESS);
                         this.tRex.startJump(this.currentSpeed);
                     } else if (this.tRex.jumping && !e.repeat &&
@@ -929,7 +923,17 @@
          */
         initMenu: function () {
             this.menuEl = document.getElementById('menu');
-            this.menuInfoEl = document.getElementById('menu-info');
+            this.menuInfoEls = document.querySelectorAll('.menu-info');
+            this.beginschermEl = document.getElementById('beginscherm');
+
+            // AANPASSING 7: START-knop, dino-plaatje en highscorelijst.
+            document.getElementById('start-knop').addEventListener('click',
+                function (e) {
+                    e.currentTarget.blur();
+                    this.beginSpel();
+                }.bind(this));
+            this.tekenBeginschermDino();
+            this.toonHighscoreLijst();
             this.menuButtons = document.querySelectorAll('.menu-knop');
 
             for (var i = 0; i < this.menuButtons.length; i++) {
@@ -978,9 +982,70 @@
                 this.menuButtons[i].classList.toggle('gekozen',
                     this.menuButtons[i].dataset.moeilijkheid == name);
             }
-            this.menuInfoEl.textContent = settings.naam + ': ' + settings.LIVES +
+            var info = settings.naam + ': ' + settings.LIVES +
                 (settings.LIVES == 1 ? ' leven' : ' levens') +
                 ', snelheid ' + settings.SPEED + ' tot ' + settings.MAX_SPEED;
+            // Er staat een uitlegregel in het beginscherm én in het kleine menu.
+            for (var j = 0; j < this.menuInfoEls.length; j++) {
+                this.menuInfoEls[j].textContent = info;
+            }
+        },
+
+        /**
+         * AANPASSING 7: start het spel. Wordt aangeroepen door spatie/pijltje
+         * omhoog (in onKeyDown) en door de START-knop.
+         */
+        beginSpel: function () {
+            if (this.playing || this.crashed) {
+                return;
+            }
+            this.beginschermEl.classList.add('verborgen');
+            this.showMenu(false);
+            this.loadSounds();
+            this.playing = true;
+            this.update();
+            // Eerste sprong: die start ook de intro-animatie van het spel.
+            this.playSound(this.soundFx.BUTTON_PRESS);
+            this.tRex.startJump(this.currentSpeed);
+        },
+
+        /**
+         * AANPASSING 7: teken een grote dino op het beginscherm. We knippen de
+         * staande dino uit de sprite-afbeelding (2x-versie, dus scherp).
+         */
+        tekenBeginschermDino: function () {
+            var canvas = document.getElementById('beginscherm-dino');
+            var ctx = canvas.getContext('2d');
+            var sprite = document.getElementById('offline-resources-2x');
+            var teken = function () {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                // Bron: x = 1678 + 2 * 44 (staande dino), y = 4, 88 x 94 pixels.
+                ctx.drawImage(sprite, 1678 + 88, 4, 88, 94, 0, 0, 88, 94);
+            };
+            if (sprite.complete) {
+                teken();
+            } else {
+                sprite.addEventListener('load', teken);
+            }
+        },
+
+        /**
+         * AANPASSING 7: zet de highscores van alle moeilijkheden in een tabel.
+         */
+        toonHighscoreLijst: function () {
+            var tabel = document.getElementById('highscore-lijst');
+            var huidige = this.difficulty;
+            tabel.innerHTML = '';
+            for (var naam in Runner.difficulties) {
+                this.difficulty = naam; // tijdelijk, zodat highScoreKey() klopt
+                var pixels = this.loadHighScore();
+                var score = this.distanceMeter.getActualDistance(pixels);
+
+                var rij = tabel.insertRow();
+                rij.insertCell().textContent = Runner.difficulties[naam].naam;
+                rij.insertCell().textContent = score > 0 ? score : '-';
+            }
+            this.difficulty = huidige;
         },
 
         /**

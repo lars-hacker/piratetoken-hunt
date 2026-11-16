@@ -123,6 +123,115 @@ html, body {
   cursor: pointer;
 }
 
+/* AANPASSING 7: beginscherm. position: fixed + inset: 0 laat het de hele
+ * pagina bedekken; overflow-y: auto maakt het scrollbaar op kleine schermen. */
+.beginscherm {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  overflow-y: auto;
+  background: linear-gradient(to bottom, var(--achtergrond), #ffffff);
+  font-family: 'Open Sans', sans-serif;
+  color: #535353;
+  text-align: center;
+}
+
+.beginscherm.verborgen {
+  display: none;
+}
+
+.beginscherm-inhoud {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 24px 16px 32px;
+}
+
+.titel {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(20px, 6vw, 36px); /* past zich aan de schermbreedte aan */
+  margin: 8px 0;
+  letter-spacing: 2px;
+}
+
+.ondertitel {
+  margin: 0 0 12px;
+}
+
+.beginscherm h2 {
+  font-size: 1em;
+  margin: 12px 0 8px;
+}
+
+.beginscherm-dino {
+  width: 88px;
+  height: 94px;
+  image-rendering: pixelated; /* scherpe pixels, niet wazig uitvergroot */
+  animation: huppel 1.2s ease-in-out infinite;
+}
+
+/* Laat de dino op en neer huppelen. */
+@keyframes huppel {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+.start-knop {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 20px;
+  margin-top: 6px;
+  padding: 14px 40px;
+  border: 3px solid #535353;
+  border-radius: 8px;
+  background: #535353;
+  color: #fff;
+  cursor: pointer;
+}
+
+.start-knop:hover {
+  background: #2b2b2b;
+}
+
+.beginscherm-kolommen {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.kader {
+  flex: 1 1 220px;
+  padding: 4px 12px 12px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 2px solid #535353;
+  border-radius: 8px;
+}
+
+.kader table {
+  margin: 0 auto;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.kader td {
+  padding: 3px 8px;
+}
+
+/* Toetsen in de eerste kolom niet over twee regels verdelen. */
+.kader td:first-child {
+  white-space: nowrap;
+}
+
+kbd {
+  display: inline-block;
+  padding: 0 5px;
+  border: 1px solid #535353;
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.85em;
+}
+
 /* De gekozen knop krijgt een donkere achtergrond. */
 .menu-knop.gekozen {
   background: #535353;
