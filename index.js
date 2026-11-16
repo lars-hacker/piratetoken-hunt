@@ -35,6 +35,7 @@
         this.distanceMeter = null;
         this.distanceRan = 0;
 
+        this.difficulty = 'normaal'; // AANPASSING 6: gekozen moeilijkheid
         this.highestScore = this.loadHighScore(); // AANPASSING 4
 
         // AANPASSING 3: levens en onkwetsbaarheidstimer.
@@ -141,6 +142,26 @@
         // AANPASSING 4: naam waaronder de highscore in localStorage wordt bewaard.
         HIGHSCORE_KEY: 't-rex-highscore'
     };
+
+
+    /**
+     * AANPASSING 6: de drie moeilijkheden. Elke moeilijkheid overschrijft een
+     * paar waarden uit Runner.config.
+     * SPEED = beginsnelheid, MAX_SPEED = topsnelheid, ACCELERATION = hoeveel
+     * sneller per frame, GAP_COEFFICIENT = afstand tussen obstakels (groter =
+     * meer ruimte), LIVES = aantal levens.
+     */
+    Runner.difficulties = {
+        makkelijk: { naam: 'Makkelijk', SPEED: 5, MAX_SPEED: 10, ACCELERATION: 0.0005,
+            GAP_COEFFICIENT: 0.9, LIVES: 5 },
+        normaal: { naam: 'Normaal', SPEED: 6, MAX_SPEED: 13, ACCELERATION: 0.001,
+            GAP_COEFFICIENT: 0.6, LIVES: 3 },
+        moeilijk: { naam: 'Moeilijk', SPEED: 8, MAX_SPEED: 16, ACCELERATION: 0.002,
+            GAP_COEFFICIENT: 0.45, LIVES: 1 }
+    };
+
+    // AANPASSING 6: toetsen 1, 2 en 3 (keyCode 49, 50, 51) kiezen een moeilijkheid.
+    Runner.difficultyKeys = { '49': 'makkelijk', '50': 'normaal', '51': 'moeilijk' };
 
 
     /**
@@ -402,6 +423,9 @@
             if (this.highestScore > 0) {
                 this.distanceMeter.setHighScore(this.highestScore);
             }
+
+            // AANPASSING 6: koppel de menuknoppen en kies de standaardmoeilijkheid.
+            this.initMenu();
 
             this.outerContainerEl.appendChild(this.containerEl);
 
@@ -718,19 +742,20 @@
                 e.preventDefault();
             }
 
+            // AANPASSING 6: moeilijkheid kiezen met 1, 2 of 3 (alleen buiten het spel).
+            if (!this.playing && Runner.difficultyKeys[e.keyCode]) {
+                this.setDifficulty(Runner.difficultyKeys[e.keyCode]);
+                return;
+            }
+
             if (e.target != this.detailsButton) {
                 if (!this.crashed && (Runner.keycodes.JUMP[e.keyCode] ||
                     e.type == Runner.events.TOUCHSTART)) {
                     if (!this.playing) {
-                        this.loadSounds();
-                        this.playing = true;
-                        this.update();
-                        if (window.errorPageController) {
-                            errorPageController.trackEasterEgg();
-                        }
-                    }
-                    //  Play sound effect and jump on starting the game for the first time.
-                    if (!this.tRex.jumping && !this.tRex.ducking) {
+                        // AANPASSING 7: starten staat nu in een eigen functie,
+                        // zodat de START-knop dezelfde code kan gebruiken.
+                        this.beginSpel();
+                    } else if (!this.tRex.jumping && !this.tRex.ducking) {
                         this.playSound(this.soundFx.BUTTON_PRESS);
                         this.tRex.startJump(this.currentSpeed);
                     } else if (this.tRex.jumping && !e.repeat &&
@@ -850,6 +875,9 @@
                 this.saveHighScore(this.highestScore); // AANPASSING 4
             }
 
+            // AANPASSING 6: na game over kun je een andere moeilijkheid kiezen.
+            this.showMenu(true);
+
             // Reset the time clock.
             this.time = getTimeStamp();
         },
@@ -883,12 +911,158 @@
         },
 
         /**
+         * AANPASSING 6: elke moeilijkheid heeft een eigen highscore,
+         * bijvoorbeeld 't-rex-highscore-moeilijk'.
+         */
+        highScoreKey: function () {
+            return this.config.HIGHSCORE_KEY + '-' + this.difficulty;
+        },
+
+        /**
+         * AANPASSING 6: koppel de knoppen in het menu aan setDifficulty.
+         */
+        initMenu: function () {
+            this.menuEl = document.getElementById('menu');
+            this.menuInfoEls = document.querySelectorAll('.menu-info');
+            this.beginschermEl = document.getElementById('beginscherm');
+
+            // AANPASSING 7: START-knop, dino-plaatje en highscorelijst.
+            document.getElementById('start-knop').addEventListener('click',
+                function (e) {
+                    e.currentTarget.blur();
+                    this.beginSpel();
+                }.bind(this));
+            this.tekenBeginschermDino();
+            this.toonHighscoreLijst();
+            this.menuButtons = document.querySelectorAll('.menu-knop');
+
+            for (var i = 0; i < this.menuButtons.length; i++) {
+                this.menuButtons[i].addEventListener('click', function (e) {
+                    this.setDifficulty(e.currentTarget.dataset.moeilijkheid);
+                    // Haal de focus van de knop, anders "klikt" spatie op de knop.
+                    e.currentTarget.blur();
+                }.bind(this));
+            }
+            this.setDifficulty(this.difficulty);
+        },
+
+        /**
+         * AANPASSING 6: stel een moeilijkheid in. Kan alleen als het spel
+         * niet loopt (voor de start of na game over).
+         * @param {string} name 'makkelijk', 'normaal' of 'moeilijk'
+         */
+        setDifficulty: function (name) {
+            var settings = Runner.difficulties[name];
+            if (!settings || this.playing) {
+                return;
+            }
+            this.difficulty = name;
+
+            // Kopieer de waarden naar de config van het spel.
+            this.config.SPEED = settings.SPEED;
+            this.config.MAX_SPEED = settings.MAX_SPEED;
+            this.config.ACCELERATION = settings.ACCELERATION;
+            this.config.GAP_COEFFICIENT = settings.GAP_COEFFICIENT;
+            this.config.LIVES = settings.LIVES;
+
+            this.setSpeed(settings.SPEED);
+            this.horizon.gapCoefficient = settings.GAP_COEFFICIENT;
+            this.lives = settings.LIVES;
+
+            // Laad de highscore die bij deze moeilijkheid hoort.
+            this.highestScore = this.loadHighScore();
+            if (this.highestScore > 0) {
+                this.distanceMeter.setHighScore(this.highestScore);
+            } else {
+                this.distanceMeter.highScore = 0; // geen highscore tonen
+            }
+
+            // Werk het menu bij: gekozen knop markeren en uitleg tonen.
+            for (var i = 0; i < this.menuButtons.length; i++) {
+                this.menuButtons[i].classList.toggle('gekozen',
+                    this.menuButtons[i].dataset.moeilijkheid == name);
+            }
+            var info = settings.naam + ': ' + settings.LIVES +
+                (settings.LIVES == 1 ? ' leven' : ' levens') +
+                ', snelheid ' + settings.SPEED + ' tot ' + settings.MAX_SPEED;
+            // Er staat een uitlegregel in het beginscherm én in het kleine menu.
+            for (var j = 0; j < this.menuInfoEls.length; j++) {
+                this.menuInfoEls[j].textContent = info;
+            }
+        },
+
+        /**
+         * AANPASSING 7: start het spel. Wordt aangeroepen door spatie/pijltje
+         * omhoog (in onKeyDown) en door de START-knop.
+         */
+        beginSpel: function () {
+            if (this.playing || this.crashed) {
+                return;
+            }
+            this.beginschermEl.classList.add('verborgen');
+            this.showMenu(false);
+            this.loadSounds();
+            this.playing = true;
+            this.update();
+            // Eerste sprong: die start ook de intro-animatie van het spel.
+            this.playSound(this.soundFx.BUTTON_PRESS);
+            this.tRex.startJump(this.currentSpeed);
+        },
+
+        /**
+         * AANPASSING 7: teken een grote dino op het beginscherm. We knippen de
+         * staande dino uit de sprite-afbeelding (2x-versie, dus scherp).
+         */
+        tekenBeginschermDino: function () {
+            var canvas = document.getElementById('beginscherm-dino');
+            var ctx = canvas.getContext('2d');
+            var sprite = document.getElementById('offline-resources-2x');
+            var teken = function () {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                // Bron: x = 1678 + 2 * 44 (staande dino), y = 4, 88 x 94 pixels.
+                ctx.drawImage(sprite, 1678 + 88, 4, 88, 94, 0, 0, 88, 94);
+            };
+            if (sprite.complete) {
+                teken();
+            } else {
+                sprite.addEventListener('load', teken);
+            }
+        },
+
+        /**
+         * AANPASSING 7: zet de highscores van alle moeilijkheden in een tabel.
+         */
+        toonHighscoreLijst: function () {
+            var tabel = document.getElementById('highscore-lijst');
+            var huidige = this.difficulty;
+            tabel.innerHTML = '';
+            for (var naam in Runner.difficulties) {
+                this.difficulty = naam; // tijdelijk, zodat highScoreKey() klopt
+                var pixels = this.loadHighScore();
+                var score = this.distanceMeter.getActualDistance(pixels);
+
+                var rij = tabel.insertRow();
+                rij.insertCell().textContent = Runner.difficulties[naam].naam;
+                rij.insertCell().textContent = score > 0 ? score : '-';
+            }
+            this.difficulty = huidige;
+        },
+
+        /**
+         * AANPASSING 6: menu tonen (true) of verbergen (false).
+         * @param {boolean} visible
+         */
+        showMenu: function (visible) {
+            this.menuEl.classList.toggle('verborgen', !visible);
+        },
+
+        /**
          * AANPASSING 4: lees de highscore uit localStorage (0 als er niets is).
          * try/catch omdat localStorage in sommige browsers geblokkeerd is.
          */
         loadHighScore: function () {
             try {
-                var saved = parseInt(localStorage.getItem(this.config.HIGHSCORE_KEY), 10);
+                var saved = parseInt(localStorage.getItem(this.highScoreKey()), 10);
                 return isNaN(saved) ? 0 : saved;
             } catch (e) {
                 return 0;
@@ -900,7 +1074,7 @@
          */
         saveHighScore: function (score) {
             try {
-                localStorage.setItem(this.config.HIGHSCORE_KEY, String(score));
+                localStorage.setItem(this.highScoreKey(), String(score));
             } catch (e) {
                 // Opslaan lukt niet: dan blijft de highscore alleen deze sessie bewaard.
             }
@@ -930,6 +1104,7 @@
                 this.playing = true;
                 this.crashed = false;
                 this.distanceRan = 0;
+                this.showMenu(false);             // AANPASSING 6
                 this.lives = this.config.LIVES;   // AANPASSING 3
                 this.invincibleTimer = 0;         // AANPASSING 3
                 this.setSpeed(this.config.SPEED);

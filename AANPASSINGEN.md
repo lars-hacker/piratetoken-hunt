@@ -1,6 +1,6 @@
 # Aanpassingen aan de T-Rex Runner
 
-Het origineel is het dinospel uit Google Chrome dat je krijgt als je geen internet hebt. Ik heb het spel op vijf punten aangepast. De wijzigingen staan in `index.js` en `index.css` en zijn in de code te vinden met de zoekterm `AANPASSING`.
+Het origineel is het dinospel uit Google Chrome dat je krijgt als je geen internet hebt. Ik heb het spel op zeven punten aangepast. De wijzigingen staan in `index.js`, `index.css` en `index.html` en zijn in de code te vinden met de zoekterm `AANPASSING`.
 
 | # | Aanpassing | Wat het doet |
 |---|------------|--------------|
@@ -9,6 +9,8 @@ Het origineel is het dinospel uit Google Chrome dat je krijgt als je geen intern
 | 3 | Levens | Je hebt 3 levens. Pas na 3 botsingen is het game over |
 | 4 | Opgeslagen highscore | Je highscore blijft bewaard, ook nadat je de pagina sluit |
 | 5 | Achtergrondkleur | Lichtblauwe lucht in plaats van een witte achtergrond |
+| 6 | Moeilijkheidsmenu | Kies tussen Makkelijk, Normaal en Moeilijk |
+| 7 | Beginscherm | Titelscherm met moeilijkheid, besturing, highscores en een START-knop |
 
 ---
 
@@ -120,6 +122,54 @@ html, body {
 
 ---
 
+## Aanpassing 6: menu met drie moeilijkheden
+
+**Idee:** voor het spelen, en na elke game over, kies je in een menu hoe moeilijk het spel is. Dat kan door op een knop te klikken of door op **1**, **2** of **3** te drukken.
+
+| Instelling | Makkelijk | Normaal | Moeilijk | Betekenis |
+|---|---|---|---|---|
+| `SPEED` | 5 | 6 | 8 | beginsnelheid |
+| `MAX_SPEED` | 10 | 13 | 16 | topsnelheid |
+| `ACCELERATION` | 0,0005 | 0,001 | 0,002 | hoeveel sneller per frame |
+| `GAP_COEFFICIENT` | 0,9 | 0,6 | 0,45 | ruimte tussen obstakels (groter = meer ruimte) |
+| `LIVES` | 5 | 3 | 1 | aantal levens |
+
+"Normaal" heeft dezelfde snelheden als het originele spel.
+
+**Hoe het werkt:**
+
+- **HTML (`index.html`):** het menu is een `<div id="menu">` met drie knoppen. Elke knop heeft een `data-moeilijkheid`-attribuut, bijvoorbeeld `data-moeilijkheid="moeilijk"`. JavaScript leest dat attribuut uit met `button.dataset.moeilijkheid`. Het oude berichtje "Press Space to start" en het losse scriptje dat het verborg, zijn weggehaald.
+- **Gegevens (`Runner.difficulties`):** de drie moeilijkheden staan in één object. Elke moeilijkheid is zelf weer een object met de waarden uit de tabel. Een vierde moeilijkheid toevoegen is daardoor makkelijk: je voegt één regel toe aan het object en één knop aan de HTML.
+- **`setDifficulty(name)`:** kopieert de waarden naar `this.config`, het object waar het spel zijn instellingen uit leest. De functie zet ook de snelheid, de ruimte tussen obstakels (`horizon.gapCoefficient`) en de levens meteen goed. Bovenaan staat een **controle**: `if (!settings || this.playing) return;`. Tijdens het spelen kun je de moeilijkheid dus niet veranderen, anders zou je midden in een potje kunnen wisselen.
+- **Events:** `initMenu()` koppelt aan elke knop een `click`-*event listener* (een functie die wordt uitgevoerd als er op de knop geklikt wordt). In `onKeyDown` vertaalt `Runner.difficultyKeys` de toetscodes 49, 50 en 51 (de toetsen 1, 2 en 3) naar een moeilijkheid.
+- **`blur()`:** na een klik heeft de knop de *focus* (hij is "geselecteerd"). Spatie zou dan de knop nog een keer indrukken in plaats van te springen. `blur()` haalt die focus weg.
+- **Tonen en verbergen:** `showMenu(true/false)` zet de CSS-class `verborgen` (met `display: none`) aan of uit. Het menu verdwijnt als het spel start of herstart, en komt terug bij game over.
+- **Highscore per moeilijkheid:** de naam in `localStorage` hangt nu af van de moeilijkheid, bijvoorbeeld `t-rex-highscore-moeilijk`. Zo kun je een score op Makkelijk niet vergelijken met een score op Moeilijk.
+- **CSS:** het menu heeft `position: fixed` en `bottom: 16px`. Het zweeft dus onderaan het scherm en bedekt de score en "GAME OVER" niet. Bij het testen stond het eerst bovenaan, en toen lag het precies over de score heen.
+
+---
+
+## Aanpassing 7: beginscherm
+
+**Idee:** als je de pagina opent, zie je eerst een titelscherm in plaats van meteen het spel. Op dat scherm staan:
+- de titel **T-REX RUNNER** in een pixel-lettertype (*Press Start 2P* van Google Fonts);
+- een grote dino die op en neer huppelt;
+- de knoppen voor de moeilijkheid (aanpassing 6);
+- een grote **START**-knop (of druk op spatie);
+- een uitleg van de besturing;
+- je highscores voor alle drie de moeilijkheden.
+
+**Hoe het werkt:**
+
+- **HTML:** een `<div id="beginscherm">` die de hele pagina bedekt. De moeilijkheidsknoppen hebben dezelfde class `menu-knop` als in het kleine menu. `initMenu()` zoekt alle knoppen met `querySelectorAll('.menu-knop')` op, dus de knoppen op het beginscherm werken meteen, zonder extra code. Ook de gekozen knop wordt op beide plekken gemarkeerd.
+- **CSS:** `position: fixed` met `inset: 0` (boven, rechts, onder en links 0) laat het scherm de hele pagina bedekken. Met `z-index: 20` ligt het boven het spel. De achtergrond is een **kleurverloop** (`linear-gradient`) van het luchtblauw naar wit. Het huppelen is een CSS-animatie (`@keyframes huppel`) die de dino met `translateY` 12 pixels omhoog en weer omlaag schuift. De titel gebruikt `clamp(20px, 6vw, 36px)`: de lettergrootte schaalt mee met de schermbreedte, maar blijft tussen 20 en 36 pixels. Met `flex-wrap: wrap` staan de vakken Besturing en Highscores naast elkaar op een computer en onder elkaar op een telefoon.
+- **De dino tekenen (`tekenBeginschermDino`):** het spel heeft geen los plaatje van de dino. Alle afbeeldingen staan samen in één grote afbeelding, een **sprite sheet**. Met `drawImage` knip je daar een stukje uit: vanaf positie x = 1766, y = 4, een vlak van 88 × 94 pixels. `image-rendering: pixelated` zorgt dat de pixels scherp blijven en niet wazig worden.
+- **Highscores (`toonHighscoreLijst`):** een `for...in`-lus loopt langs alle moeilijkheden in `Runner.difficulties`. Voor elke moeilijkheid wordt de score uit `localStorage` gelezen en met `getActualDistance` van pixels omgerekend naar de score die je in het spel ziet. Met `insertRow()` en `insertCell()` komt elke score als nieuwe rij in de tabel.
+- **Refactoring (`beginSpel`):** eerst stond de code om het spel te starten midden in `onKeyDown`. De START-knop moet precies hetzelfde doen. Daarom staat die code nu in een eigen functie `beginSpel()`, die zowel door de spatiebalk als door de knop wordt aangeroepen. Code op die manier herschikken zonder dat het gedrag verandert, heet **refactoring**. Zo hoef je dezelfde code niet twee keer te schrijven (het *DRY*-principe: *Don't Repeat Yourself*, herhaal jezelf niet).
+- Na een game over kom je niet terug op het beginscherm. Je ziet dan het kleine menu onderaan (aanpassing 6), zodat je snel opnieuw kunt spelen.
+
+---
+
 ## Testen
 
 Ik heb het spel automatisch getest in een browser (Playwright, Chromium):
@@ -132,8 +182,18 @@ Ik heb het spel automatisch getest in een browser (Playwright, Chromium):
 | Plafond: laagste y-positie | 0 (niet meer boven het scherm) ✔ |
 | Levens: 3 → 2 → 1 → game over | ✔ |
 | Highscore na herladen pagina | nog steeds aanwezig ✔ |
+| Menu: klik op Moeilijk | 1 leven, snelheid 8, ruimte 0,45 ✔ |
+| Menu verdwijnt bij start en komt terug bij game over | ✔ |
+| Toets 1 na game over | Makkelijk: 5 levens, snelheid 5 ✔ |
+| Highscore apart per moeilijkheid | `t-rex-highscore-moeilijk` ✔ |
+| Beginscherm zichtbaar bij laden, kleine menu verborgen | ✔ |
+| Toets 3 op het beginscherm | Moeilijk gekozen ✔ |
+| Klik op START | beginscherm weg, spel loopt, dino springt ✔ |
+| Spatie op het beginscherm | spel start ✔ |
+| Highscoretabel (opgeslagen 4000 pixels op Normaal) | toont 100 ✔ |
+| Beginscherm op telefoonformaat (390 px breed) | vakken onder elkaar, alles leesbaar ✔ |
 | JavaScript-fouten | geen ✔ |
 
 ## Spelen
 
-Open `index.html` in een browser. Druk op **spatie** of **pijltje omhoog** om te springen (twee keer voor een dubbele sprong) en op **pijltje omlaag** om te bukken.
+Open `index.html` in een browser. Kies op het beginscherm een moeilijkheid (klik, of druk op 1, 2 of 3) en klik op **START**. Druk op **spatie** of **pijltje omhoog** om te springen (twee keer voor een dubbele sprong) en op **pijltje omlaag** om te bukken.
