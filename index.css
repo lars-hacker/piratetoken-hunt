@@ -130,7 +130,9 @@ html, body {
   inset: 0;
   z-index: 20;
   overflow-y: auto;
-  background: linear-gradient(to bottom, var(--achtergrond), #ffffff);
+  /* AANPASSING 11: van lucht via zee naar strand. */
+  background: linear-gradient(to bottom, var(--achtergrond) 0%, #e8f6ff 45%,
+    #8cc8ec 70%, #f2dca4 88%);
   font-family: 'Open Sans', sans-serif;
   color: #535353;
   text-align: center;
@@ -164,8 +166,8 @@ html, body {
 }
 
 .beginscherm-dino {
-  width: 88px;
-  height: 94px;
+  width: 96px;
+  height: 112px;
   image-rendering: pixelated; /* scherpe pixels, niet wazig uitvergroot */
   animation: huppel 1.2s ease-in-out infinite;
 }
@@ -181,15 +183,37 @@ html, body {
   font-size: 20px;
   margin-top: 6px;
   padding: 14px 40px;
-  border: 3px solid #535353;
+  border: 3px solid #3d2412;
   border-radius: 8px;
-  background: #535353;
-  color: #fff;
+  background: #8b5a2b; /* AANPASSING 11: hout, zoals de tonnen */
+  color: #fff6c8;
   cursor: pointer;
 }
 
 .start-knop:hover {
-  background: #2b2b2b;
+  background: #6b4220;
+}
+
+/* AANPASSING 10: een gouden muntje gemaakt met alleen CSS. */
+.munt {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #f4c430;
+  border: 2px solid #b8860b;
+  vertical-align: middle;
+}
+
+/* AANPASSING 10: regel met de buit na game over (verborgen als hij leeg is). */
+.menu-resultaat {
+  margin: 0 0 6px;
+  font-weight: bold;
+  color: #8b5a2b;
+}
+
+.menu-resultaat:empty {
+  display: none;
 }
 
 .beginscherm-kolommen {
