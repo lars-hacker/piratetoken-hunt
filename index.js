@@ -38,6 +38,12 @@
         this.difficulty = 'normaal'; // AANPASSING 6: gekozen moeilijkheid
         this.highestScore = this.loadHighScore(); // AANPASSING 4
 
+        // AANPASSING 10: tokens in beeld, aantal verzameld, timer en "+10"-teksten.
+        this.tokens = [];
+        this.tokenCount = 0;
+        this.tokenTimer = this.config.TOKEN_MIN_INTERVAL;
+        this.tokenPopups = [];
+
         // AANPASSING 3: levens en onkwetsbaarheidstimer.
         this.lives = this.config.LIVES;
         this.invincibleTimer = 0;
@@ -140,8 +146,18 @@
         LIVES: 3,
         INVINCIBLE_TIME: 1500,
         // AANPASSING 4: naam waaronder de highscore in localStorage wordt bewaard.
-        HIGHSCORE_KEY: 't-rex-highscore'
+        HIGHSCORE_KEY: 't-rex-highscore',
+        // AANPASSING 10: gouden tokens. Tijd (ms) tussen twee tokens, punten per
+        // token en de straal van een token in pixels.
+        TOKEN_MIN_INTERVAL: 1200,
+        TOKEN_MAX_INTERVAL: 3000,
+        TOKEN_POINTS: 10,
+        TOKEN_RADIUS: 6
     };
+
+    // AANPASSING 10: hoogtes (y van het midden) waarop een token kan verschijnen:
+    // laag (gewoon doorrennen), midden (springen), hoog (dubbele sprong).
+    Runner.tokenHeights = [118, 78, 40];
 
 
     /**
@@ -583,6 +599,7 @@
 
             if (this.playing) {
                 this.clearCanvas();
+                this.drawSea(); // AANPASSING 11: zee en strand als achtergrond
 
                 if (this.tRex.jumping) {
                     this.tRex.updateJump(deltaTime);
@@ -603,6 +620,11 @@
                     deltaTime = !this.activated ? 0 : deltaTime;
                     this.horizon.update(deltaTime, this.currentSpeed, hasObstacles,
                         this.inverted);
+
+                    // AANPASSING 10: tokens bewegen, oppakken en tekenen.
+                    if (hasObstacles) {
+                        this.updateTokens(deltaTime);
+                    }
                 }
 
                 // AANPASSING 3: tel de onkwetsbaarheidstijd af.
@@ -876,6 +898,10 @@
             }
 
             // AANPASSING 6: na game over kun je een andere moeilijkheid kiezen.
+            // AANPASSING 10: toon ook hoeveel tokens je hebt verzameld.
+            document.getElementById('menu-resultaat').textContent =
+                'Je buit: ' + this.tokenCount +
+                (this.tokenCount == 1 ? ' gouden token!' : ' gouden tokens!');
             this.showMenu(true);
 
             // Reset the time clock.
@@ -907,6 +933,107 @@
                 hearts += '\u2665 ';
             }
             ctx.fillText(hearts, 5, 3);
+
+            // AANPASSING 10: tokenteller onder de hartjes.
+            tekenToken(ctx, 10, 27, 5, 1);
+            ctx.fillStyle = '#535353';
+            ctx.font = '12px Arial';
+            ctx.fillText('\u00d7 ' + this.tokenCount, 19, 21);
+            ctx.restore();
+        },
+
+        /**
+         * AANPASSING 10: tokens laten verschijnen, bewegen, oppakken en tekenen.
+         * @param {number} deltaTime Tijd sinds het vorige frame in ms.
+         */
+        updateTokens: function (deltaTime) {
+            // 1. Nieuwe token als de timer afgelopen is.
+            this.tokenTimer -= deltaTime;
+            if (this.tokenTimer <= 0) {
+                var hoogte = Runner.tokenHeights[getRandomNum(0, Runner.tokenHeights.length - 1)];
+                this.tokens.push({ x: this.dimensions.WIDTH + 10, y: hoogte });
+                this.tokenTimer = getRandomNum(this.config.TOKEN_MIN_INTERVAL,
+                    this.config.TOKEN_MAX_INTERVAL);
+            }
+
+            // 2. Kader (rechthoek) om de dino, voor de botsingscontrole.
+            var dino = this.tRex;
+            var dinoLinks = dino.xPos + 4;
+            var dinoRechts = dino.xPos + (dino.ducking ? dino.config.WIDTH_DUCK : dino.config.WIDTH) - 4;
+            var dinoBoven = dino.yPos + (dino.ducking ? 18 : 2);
+            var dinoOnder = dino.yPos + dino.config.HEIGHT;
+            var r = this.config.TOKEN_RADIUS;
+
+            // 3. Elke token naar links schuiven, net zo snel als de obstakels.
+            //    We lopen achteruit door de lijst, zodat splice() geen tokens overslaat.
+            var stap = Math.floor((this.currentSpeed * FPS / 1000) * deltaTime);
+            for (var i = this.tokens.length - 1; i >= 0; i--) {
+                var token = this.tokens[i];
+                token.x -= stap;
+
+                // Dichtstbijzijnde punt van de dino-rechthoek tot het midden van de token.
+                var dichtstX = Math.max(dinoLinks, Math.min(token.x, dinoRechts));
+                var dichtstY = Math.max(dinoBoven, Math.min(token.y, dinoOnder));
+                var dx = token.x - dichtstX;
+                var dy = token.y - dichtstY;
+
+                if (dx * dx + dy * dy < r * r) {
+                    // Opgepakt! (Pythagoras: afstand kleiner dan de straal.)
+                    this.tokenCount++;
+                    this.distanceRan += this.config.TOKEN_POINTS /
+                        this.distanceMeter.config.COEFFICIENT;
+                    this.tokenPopups.push({ x: token.x, y: token.y, tijd: 0 });
+                    this.playSound(this.soundFx.SCORE);
+                    this.tokens.splice(i, 1);
+                } else if (token.x < -r) {
+                    this.tokens.splice(i, 1); // links uit beeld: weggooien
+                } else {
+                    // Draaiende munt: de breedte volgt een cosinus van de tijd.
+                    var draai = Math.abs(Math.cos(getTimeStamp() / 200));
+                    tekenToken(this.canvasCtx, token.x, token.y, r, Math.max(draai, 0.15));
+                }
+            }
+
+            // 4. "+10" laten opstijgen en vervagen.
+            var ctx = this.canvasCtx;
+            for (var j = this.tokenPopups.length - 1; j >= 0; j--) {
+                var popup = this.tokenPopups[j];
+                popup.tijd += deltaTime;
+                if (popup.tijd > 700) {
+                    this.tokenPopups.splice(j, 1);
+                    continue;
+                }
+                ctx.save();
+                ctx.globalAlpha = 1 - popup.tijd / 700;
+                ctx.fillStyle = '#b8860b';
+                ctx.font = 'bold 11px Arial';
+                ctx.fillText('+' + this.config.TOKEN_POINTS, popup.x - 8, popup.y - popup.tijd / 30);
+                ctx.restore();
+            }
+        },
+
+        /**
+         * AANPASSING 11: teken de zee en het strand onderin het canvas.
+         * De golfjes schuiven mee met de afgelegde afstand.
+         */
+        drawSea: function () {
+            var ctx = this.canvasCtx;
+            var breedte = this.dimensions.WIDTH;
+            ctx.save();
+            ctx.fillStyle = '#5da9d6';              // zee
+            ctx.fillRect(0, 104, breedte, 28);
+            ctx.fillStyle = '#8cc8ec';              // lichte horizon
+            ctx.fillRect(0, 104, breedte, 2);
+            ctx.fillStyle = '#f2dca4';              // strand
+            ctx.fillRect(0, 131, breedte, 19);
+
+            // Golfjes: korte witte streepjes die naar links schuiven.
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            var verschuiving = Math.floor(this.distanceRan / 2) % 60;
+            for (var x = -verschuiving; x < breedte; x += 60) {
+                ctx.fillRect(x + 10, 112, 8, 1);
+                ctx.fillRect(x + 40, 124, 10, 1);
+            }
             ctx.restore();
         },
 
@@ -1020,7 +1147,10 @@
             var teken = function () {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 // Bron: x = 1678 + 2 * 44 (staande dino), y = 4, 88 x 94 pixels.
-                ctx.drawImage(sprite, 1678 + 88, 4, 88, 94, 0, 0, 88, 94);
+                // We tekenen 18 pixels lager, zodat de piratenhoed erboven past.
+                ctx.drawImage(sprite, 1678 + 88, 4, 88, 94, 0, 18, 88, 94);
+                // AANPASSING 11: hoed en ooglapje, 2x zo groot (2x-sprite).
+                tekenPiratenspullen(ctx, 44, 18 + 4, 2);
             };
             if (sprite.complete) {
                 teken();
@@ -1105,6 +1235,10 @@
                 this.crashed = false;
                 this.distanceRan = 0;
                 this.showMenu(false);             // AANPASSING 6
+                this.tokens = [];                 // AANPASSING 10
+                this.tokenPopups = [];
+                this.tokenCount = 0;
+                this.tokenTimer = this.config.TOKEN_MIN_INTERVAL;
                 this.lives = this.config.LIVES;   // AANPASSING 3
                 this.invincibleTimer = 0;         // AANPASSING 3
                 this.setSpeed(this.config.SPEED);
@@ -1301,6 +1435,86 @@
      * Return the current timestamp.
      * @return {number}
      */
+    /**
+     * AANPASSING 10: teken een gouden token (munt).
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {number} x Midden x.
+     * @param {number} y Midden y.
+     * @param {number} r Straal.
+     * @param {number} breedteFactor 1 = hele munt, kleiner = gedraaid.
+     */
+    function tekenToken(ctx, x, y, r, breedteFactor) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(x, y, r * breedteFactor, r, 0, 0, 2 * Math.PI);
+        ctx.fillStyle = '#f4c430';   // goud
+        ctx.fill();
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = '#b8860b'; // donkere rand
+        ctx.stroke();
+        // Glimmertje linksboven.
+        ctx.fillStyle = '#fff6c8';
+        ctx.fillRect(Math.round(x - r * breedteFactor / 2), Math.round(y - r / 2), 1, 2);
+        ctx.restore();
+    }
+
+    /**
+     * AANPASSING 11: teken een piratenhoed met doodshoofd en een ooglapje.
+     * Alles met rechthoekjes, zodat het past bij de pixel-stijl.
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {number} hx Linkerkant van het hoofd.
+     * @param {number} hy Bovenkant van het hoofd.
+     * @param {number} s Schaal (1 in het spel, 2 op het beginscherm).
+     */
+    function tekenPiratenspullen(ctx, hx, hy, s) {
+        var blok = function (x, y, b, h, kleur) {
+            ctx.fillStyle = kleur;
+            ctx.fillRect(hx + x * s, hy + y * s, b * s, h * s);
+        };
+        // Rand van de hoed (breed) en de bol (smaller, in stapjes omhoog).
+        blok(-3, -2, 26, 3, '#1a1a1a');
+        blok(1, -5, 18, 3, '#1a1a1a');
+        blok(3, -8, 14, 3, '#1a1a1a');
+        blok(6, -10, 8, 2, '#1a1a1a');
+        // Gouden band.
+        blok(1, -3, 18, 1, '#d4a017');
+        // Doodshoofdje: wit kopje met twee zwarte oogjes.
+        blok(8, -8, 4, 3, '#ffffff');
+        blok(9, -7, 1, 1, '#1a1a1a');
+        blok(11, -7, 1, 1, '#1a1a1a');
+        // Ooglapje over het oog (oog zit op (4, 3) vanaf het hoofd) + bandje.
+        blok(3, 2, 4, 4, '#000000');
+        blok(0, 3, 3, 1, '#000000');
+    }
+
+    /**
+     * AANPASSING 11: teken een houten ton (in plaats van een cactus).
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {number} x Linkerkant.
+     * @param {number} y Bovenkant.
+     * @param {number} b Breedte.
+     * @param {number} h Hoogte.
+     */
+    function tekenTon(ctx, x, y, b, h) {
+        ctx.save();
+        // Lichaam: smaller bovenaan en onderaan, breder in het midden (bolle ton).
+        ctx.fillStyle = '#8b5a2b';
+        ctx.fillRect(x + 2, y, b - 4, h);
+        ctx.fillRect(x, y + 3, b, h - 6);
+        // Duigen (de planken): donkere verticale lijnen.
+        ctx.fillStyle = '#6b4220';
+        ctx.fillRect(x + Math.round(b / 3), y + 1, 1, h - 2);
+        ctx.fillRect(x + Math.round(2 * b / 3), y + 1, 1, h - 2);
+        // IJzeren banden.
+        ctx.fillStyle = '#3d3d3d';
+        ctx.fillRect(x, y + 4, b, 2);
+        ctx.fillRect(x, y + h - 6, b, 2);
+        if (h > 40) {
+            ctx.fillRect(x, y + Math.round(h / 2) - 1, b, 2);
+        }
+        ctx.restore();
+    }
+
     function getTimeStamp() {
         return IS_IOS ? new Date().getTime() : performance.now();
     }
@@ -1643,6 +1857,16 @@
              * Draw and crop based on size.
              */
             draw: function () {
+                // AANPASSING 11: tonnen in plaats van cactussen. De vogels
+                // (PTERODACTYL) worden nog wel uit de sprite getekend.
+                if (this.typeConfig.type != 'PTERODACTYL') {
+                    for (var t = 0; t < this.size; t++) {
+                        tekenTon(this.canvasCtx, this.xPos + t * this.typeConfig.width,
+                            this.yPos, this.typeConfig.width, this.typeConfig.height);
+                    }
+                    return;
+                }
+
                 var sourceWidth = this.typeConfig.width;
                 var sourceHeight = this.typeConfig.height;
 
@@ -2038,6 +2262,13 @@
                     sourceWidth, sourceHeight,
                     this.xPos, this.yPos,
                     this.config.WIDTH, this.config.HEIGHT);
+            }
+            // AANPASSING 11: piratenhoed en ooglapje op het hoofd. Het hoofd zit
+            // bij staan op (22, 2) en bij bukken op (39, 20) binnen de dino.
+            if (this.ducking && this.status != Trex.status.CRASHED) {
+                tekenPiratenspullen(this.canvasCtx, this.xPos + 39, this.yPos + 20, 1);
+            } else {
+                tekenPiratenspullen(this.canvasCtx, this.xPos + 22, this.yPos + 2, 1);
             }
             this.canvasCtx.restore(); // AANPASSING 3
         },

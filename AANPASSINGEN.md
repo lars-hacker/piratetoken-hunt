@@ -1,6 +1,6 @@
 # Aanpassingen aan de T-Rex Runner
 
-Het origineel is het dinospel uit Google Chrome dat je krijgt als je geen internet hebt. Ik heb het spel op zeven punten aangepast. De wijzigingen staan in `index.js`, `index.css` en `index.html` en zijn in de code te vinden met de zoekterm `AANPASSING`.
+Het origineel is het dinospel uit Google Chrome dat je krijgt als je geen internet hebt. Ik heb het spel op elf punten aangepast. De wijzigingen staan in `index.js`, `index.css` en `index.html` en zijn in de code te vinden met de zoekterm `AANPASSING`.
 
 | # | Aanpassing | Wat het doet |
 |---|------------|--------------|
@@ -11,6 +11,10 @@ Het origineel is het dinospel uit Google Chrome dat je krijgt als je geen intern
 | 5 | Achtergrondkleur | Lichtblauwe lucht in plaats van een witte achtergrond |
 | 6 | Moeilijkheidsmenu | Kies tussen Makkelijk, Normaal en Moeilijk |
 | 7 | Beginscherm | Titelscherm met moeilijkheid, besturing, highscores en een START-knop |
+| 8 | Cache busting | Na een update laadt de browser altijd de nieuwe CSS en JavaScript |
+| 9 | Nieuwe naam | Het spel heet nu **Pirate Token Hunt** |
+| 10 | Gouden tokens | Verzamel draaiende munten voor +10 punten per stuk |
+| 11 | Piratenthema | Dino met piratenhoed en ooglapje, tonnen, zee en strand |
 
 ---
 
@@ -170,6 +174,75 @@ html, body {
 
 ---
 
+## Aanpassing 8: cache busting (versienummer)
+
+**Probleem:** na het online zetten van het beginscherm zag de website er kapot uit: de tekst stond er wel, maar zonder opmaak, en de dino en de highscores ontbraken. Wat was er aan de hand? GitHub Pages laat browsers een kopie van bestanden 10 minuten bewaren. Zo'n bewaarde kopie heet de **cache**. De browser haalde de nieuwe `index.html` op, maar gebruikte nog de **oude** `index.css` en `index.js` uit de cache. Nieuwe HTML met oude CSS en JavaScript past niet bij elkaar.
+
+**Oplossing:** in `index.html` staat nu een versienummer achter de bestandsnamen:
+
+```html
+<link rel="stylesheet" href="index.css?v=7">
+<script src="index.js?v=7"></script>
+```
+
+Het stuk na het vraagteken (`?v=7`) heet een **querystring**. De server negeert het en stuurt gewoon `index.css`. Maar voor de browser is `index.css?v=7` een ander adres dan `index.css`, dus er is nog geen kopie in de cache en de browser haalt het nieuwe bestand op. Deze techniek heet **cache busting**.
+
+**Let op bij een volgende update:** verhoog het getal (bijvoorbeeld naar `?v=8`) als je `index.css` of `index.js` verandert.
+
+---
+
+## Aanpassing 9: nieuwe naam, Pirate Token Hunt
+
+**Idee:** het spel krijgt een eigen naam in plaats van de naam van het origineel van Chrome.
+
+**Hoe:** de naam staat op twee plekken in `index.html`:
+- `<title>Pirate Token Hunt</title>`: de tekst op het tabblad van de browser. Daar stond eerst nog "chrome easter egg: t-rex runner".
+- `<h1 class="titel">PIRATE TOKEN HUNT</h1>`: de grote titel op het beginscherm. Die is in hoofdletters geschreven, net als de score in het spel. Dat past bij de pixel-stijl.
+
+Omdat dit een HTML-wijziging is, hoeft er geen JavaScript te veranderen. Het versienummer van de CSS en JS is toch verhoogd naar `?v=8` (zie aanpassing 8), zodat alle bezoekers zeker de nieuwste versie krijgen.
+
+Op een telefoon past de naam niet op één regel. De browser breekt de titel dan vanzelf af bij een spatie, zodat hij over twee regels staat.
+
+---
+
+## Aanpassing 10: gouden tokens verzamelen
+
+**Idee:** de naam zegt het al: je jaagt op tokens. Er komen draaiende gouden munten voorbij. Pak je er een, dan krijg je **+10 punten** en zie je een "+10" omhoog zweven. Linksboven, onder de hartjes, staat hoeveel tokens je hebt. Na game over zie je je buit: "Je buit: 5 gouden tokens!".
+
+**Hoe het werkt (`updateTokens`, elk frame):**
+
+1. **Verschijnen:** een timer (`tokenTimer`) telt af met `deltaTime`. Bij 0 komt er rechts buiten beeld een nieuwe token bij, op een willekeurige hoogte uit `Runner.tokenHeights`. Die drie hoogtes vragen elk iets anders: laag (gewoon doorrennen), midden (springen) of hoog (dubbele sprong). Daarna krijgt de timer een willekeurige nieuwe waarde tussen 1,2 en 3 seconden, zodat de tokens niet in een vast ritme komen.
+2. **Bewegen:** elke token schuift naar links met dezelfde formule als de obstakels: `snelheid × FPS / 1000 × deltaTime`. Zo lijken ze stil te liggen terwijl de dino rent.
+3. **Botsing (oppakken):** de dino is een rechthoek en de token een cirkel. Eerst zoek je het punt van de rechthoek dat het dichtst bij het middelpunt van de cirkel ligt:
+   ```js
+   var dichtstX = Math.max(dinoLinks, Math.min(token.x, dinoRechts));
+   ```
+   Daarna gebruik je **Pythagoras**: als `dx² + dy² < r²`, is de afstand kleiner dan de straal en raakt de dino de munt. We vergelijken de kwadraten, zo is een wortel (`Math.sqrt`) niet nodig.
+4. **Punten:** de score wordt berekend uit `distanceRan` (in pixels) maal `COEFFICIENT` (0,025). Voor 10 punten tellen we dus 10 / 0,025 = 400 pixels op bij `distanceRan`.
+5. **Opruimen:** opgepakte tokens en tokens die links uit beeld zijn, gaan met `splice` uit de lijst. De lus loopt **achteruit** (`i--`). Als je vooruit loopt en een element verwijdert, schuift de rest een plek op en sla je er een over.
+6. **Draaien:** de breedte van de munt is `|cos(tijd / 200)|` keer de straal. Een cosinus gaat tussen −1 en 1 op en neer. De absolute waarde maakt daar 0 tot 1 van, en dat ziet eruit als een munt die om zijn as draait. De munt wordt getekend met `ctx.ellipse`.
+
+Op het beginscherm staat in de besturingstabel een muntje dat alleen met CSS is gemaakt: een vierkantje met `border-radius: 50%` wordt een cirkel.
+
+---
+
+## Aanpassing 11: piratenthema
+
+**Idee:** het spel moet passen bij de naam. Daarom:
+- de dino draagt een **piratenhoed met doodshoofd** en een **ooglapje**;
+- de cactussen zijn **houten tonnen** geworden;
+- de achtergrond is een **zee met golfjes** en een **zandstrand**;
+- het beginscherm loopt van lucht via zee naar strand, en de START-knop is van "hout".
+
+**Hoe het werkt:**
+
+- **Geen nieuwe plaatjes nodig.** Alles is met code getekend: met `fillRect` (rechthoekjes) op het canvas. Dat past bij de pixel-stijl en je hoeft de sprite sheet niet te bewerken.
+- **Hoed en ooglapje (`tekenPiratenspullen`):** eerst heb ik de pixels van de dino uit de sprite sheet als tekst uitgeprint. Zo kon ik zien waar het hoofd begint (x = 22, y = 2 bij staan, en x = 39, y = 20 bij bukken) en waar het oog zit. De functie tekent alles **relatief** aan de linkerbovenhoek van het hoofd, met een schaalfactor `s`. Dezelfde functie werkt daardoor in het spel (`s = 1`) én op het grote beginscherm (`s = 2`). `Trex.draw()` roept hem aan na het tekenen van de dino, zodat de hoed er bovenop komt.
+- **Tonnen (`tekenTon`):** in `Obstacle.draw()` staat een `if`: is het obstakel geen vogel (`PTERODACTYL`), dan tekenen we een ton in plaats van het cactusplaatje. Een ton bestaat uit twee bruine rechthoeken (een smalle en een iets bredere, samen een bolle vorm), donkere lijnen voor de planken en grijze banden. Breedte en hoogte komen uit de bestaande obstakelgegevens. De **botsingsvakken** zijn niet veranderd, dus het spel is even moeilijk als met cactussen.
+- **Zee en strand (`drawSea`):** dit wordt elk frame als eerste getekend, direct na `clearCanvas()`. Daardoor staat alles daarna (dino, tonnen, tokens) eroverheen. Dit heet **tekenvolgorde** (*painter's algorithm*): wat je later tekent, ligt bovenop. De golfjes zijn witte streepjes om de 60 pixels. Ze verschuiven met `distanceRan % 60` (de rest bij delen door 60), zodat ze meebewegen en steeds opnieuw beginnen.
+
+---
+
 ## Testen
 
 Ik heb het spel automatisch getest in een browser (Playwright, Chromium):
@@ -192,6 +265,10 @@ Ik heb het spel automatisch getest in een browser (Playwright, Chromium):
 | Spatie op het beginscherm | spel start ✔ |
 | Highscoretabel (opgeslagen 4000 pixels op Normaal) | toont 100 ✔ |
 | Beginscherm op telefoonformaat (390 px breed) | vakken onder elkaar, alles leesbaar ✔ |
+| Token vlak voor de dino gelegd | `tokenCount` 0 → 1, score +10 ✔ |
+| Buit na game over | "Je buit: 2 gouden tokens!" ✔ |
+| Hoed blijft op het hoofd bij staan, rennen en bukken | ✔ (screenshots) |
+| Tonnen, zee en strand zichtbaar, geen JavaScript-fouten | ✔ |
 | JavaScript-fouten | geen ✔ |
 
 ## Spelen

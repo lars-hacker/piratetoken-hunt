@@ -4,23 +4,25 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0, user-scalable=no">
-    <title >chrome easter egg: t-rex runner</title>
-    <link rel="stylesheet" href="index.css">
+    <title>Pirate Token Hunt</title>
+    <!-- AANPASSING 8: versienummer (?v=7) dwingt de browser om na een update
+         de nieuwe CSS en JS op te halen in plaats van een oude kopie. -->
+    <link rel="stylesheet" href="index.css?v=9">
     <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet"> 
     <!-- AANPASSING 7: pixel-lettertype voor de titel op het beginscherm -->
     <link href="https://fonts.googleapis.com/css?family=Press+Start+2P" rel="stylesheet">
-    <script src="index.js"></script>
+    <script src="index.js?v=9"></script>
 </head>
 
 <body id="t" class="offline">
     <!-- AANPASSING 7: beginscherm. Bedekt de hele pagina tot je op START drukt. -->
     <div id="beginscherm" class="beginscherm">
         <div class="beginscherm-inhoud">
-            <h1 class="titel">T-REX RUNNER</h1>
-            <p class="ondertitel">Spring over de cactussen, ontwijk de vogels!</p>
+            <h1 class="titel">PIRATE TOKEN HUNT</h1>
+            <p class="ondertitel">Spring over de tonnen, ontwijk de vogels en verzamel zoveel mogelijk gouden tokens!</p>
 
             <!-- Hier tekent JavaScript een grote dino uit de sprite-afbeelding. -->
-            <canvas id="beginscherm-dino" class="beginscherm-dino" width="88" height="94"></canvas>
+            <canvas id="beginscherm-dino" class="beginscherm-dino" width="96" height="112"></canvas>
 
             <h2>Kies je moeilijkheid</h2>
             <div class="menu-knoppen">
@@ -41,6 +43,7 @@
                         <tr><td>2&times; <kbd>spatie</kbd></td><td>dubbele sprong</td></tr>
                         <tr><td><kbd>&darr;</kbd></td><td>bukken</td></tr>
                         <tr><td><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></td><td>moeilijkheid kiezen</td></tr>
+                        <tr><td><span class="munt"></span> token</td><td>+10 punten</td></tr>
                     </table>
                 </div>
                 <div class="kader">
@@ -53,6 +56,7 @@
 
     <!-- AANPASSING 6: menu om de moeilijkheid te kiezen (na game over) -->
     <div id="menu" class="menu verborgen">
+        <p id="menu-resultaat" class="menu-resultaat"></p>
         <h1>Kies je moeilijkheid</h1>
         <div class="menu-knoppen">
             <button class="menu-knop" data-moeilijkheid="makkelijk">1. Makkelijk</button>
