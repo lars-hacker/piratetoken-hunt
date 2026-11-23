@@ -1,6 +1,6 @@
 # Aanpassingen aan de T-Rex Runner
 
-Het origineel is het dinospel uit Google Chrome dat je krijgt als je geen internet hebt. Ik heb het spel op twaalf punten aangepast. De wijzigingen staan in `index.js`, `index.css` en `index.html` en zijn in de code te vinden met de zoekterm `AANPASSING`.
+Het origineel is het dinospel uit Google Chrome dat je krijgt als je geen internet hebt. Ik heb het spel op dertien punten aangepast. Aanpassing 1 tot en met 11 gaan over de oorspronkelijke 2D-versie; sinds aanpassing 13 bestaat alleen nog de 3D-versie (aanpassing 12). De 2D-code staat nog in de Git-geschiedenis. De wijzigingen staan in `index.js`, `index.css` en `index.html` en zijn in de code te vinden met de zoekterm `AANPASSING`.
 
 | # | Aanpassing | Wat het doet |
 |---|------------|--------------|
@@ -15,7 +15,8 @@ Het origineel is het dinospel uit Google Chrome dat je krijgt als je geen intern
 | 9 | Nieuwe naam | Het spel heet nu **Pirate Token Hunt** |
 | 10 | Gouden tokens | Verzamel draaiende munten voor +10 punten per stuk |
 | 11 | Piratenthema | Dino met piratenhoed en ooglapje, tonnen, zee en strand |
-| 12 | 3D-versie | Een nieuwe 3D-versie, gemaakt met **p5.js**, in de map `3d/` |
+| 12 | 3D-versie | Een nieuwe 3D-versie, gemaakt met **p5.js** |
+| 13 | Alleen nog 3D | De 2D-versie is verwijderd; de 3D-versie is nu het hoofdspel |
 
 ---
 
@@ -310,6 +311,21 @@ Een `touchstart`- en `touchend`-event meten waar je vinger begint en eindigt. Ee
 
 ---
 
+## Aanpassing 13: alleen nog de 3D-versie
+
+**Idee:** het spel bestaat alleen nog in 3D. De link https://lars-hacker.github.io/piratetoken-hunt/ opent meteen het 3D-spel.
+
+**Wat er is veranderd:**
+- De bestanden uit de map `3d/` staan nu in de hoofdmap: `index.html`, `style.css`, `sketch.js` en `lib/p5.min.js`.
+- De 2D-bestanden (`index.js`, `index.css`, het oude `index.html` en de map `assets/` met de sprite sheet) zijn verwijderd. De tabellen bij aanpassing 12 noemen nog de oude paden met `3d/`.
+- De link "Terug naar de 2D-versie" is weg.
+- In de map `3d/` staat nog één klein bestand: een **doorverwijspagina**. Daarin staat `<meta http-equiv="refresh" content="0; url=../">`, wat betekent: ga na 0 seconden naar de map erboven. Wie nog de oude link met `/3d/` heeft, komt zo vanzelf bij het spel.
+- De versienummers zijn verhoogd naar `?v=2` (zie aanpassing 8), en `README.md` beschrijft nu het nieuwe spel.
+
+**De 2D-versie terugzien:** omdat alles in Git staat, is niets echt weg. Op GitHub kun je bij **Commits** een oudere versie openen en met **Browse files** bekijken hoe de bestanden toen waren.
+
+---
+
 ## Testen
 
 Ik heb het spel automatisch getest in een browser (Playwright, Chromium):
@@ -342,8 +358,10 @@ Ik heb het spel automatisch getest in een browser (Playwright, Chromium):
 | 3D: ton vlak voor de dino | levens 5 → 4 ✔ |
 | 3D: laatste leven kwijt | game-over-scherm met score en buit ✔ |
 | 3D: telefoonformaat (390 × 844) | alle banen in beeld ✔ |
+| Alleen 3D: hoofdpagina opent het 3D-spel en start | ✔ |
+| Oude link `/3d/` stuurt door naar de hoofdpagina | ✔ |
 | JavaScript-fouten | geen ✔ |
 
 ## Spelen
 
-Open `index.html` in een browser. Kies op het beginscherm een moeilijkheid (klik, of druk op 1, 2 of 3) en klik op **START**. Druk op **spatie** of **pijltje omhoog** om te springen (twee keer voor een dubbele sprong) en op **pijltje omlaag** om te bukken.
+Ga naar https://lars-hacker.github.io/piratetoken-hunt/ of open `index.html` in een browser. Kies op het beginscherm een moeilijkheid (klik, of druk op 1, 2 of 3) en klik op **START**. Wissel van baan met **←** en **→**, en druk op **spatie** of **pijltje omhoog** om te springen (twee keer voor een dubbele sprong). Op een telefoon veeg je om van baan te wisselen en tik je om te springen.
