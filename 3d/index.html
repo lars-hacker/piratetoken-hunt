@@ -1,84 +1,12 @@
 <!doctype html>
 <html lang="nl">
-
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- De 3D-versie staat nu in de hoofdmap. Deze pagina stuurt oude /3d/-links door. -->
+    <meta http-equiv="refresh" content="0; url=../">
     <title>Pirate Token Hunt 3D</title>
-    <link href="https://fonts.googleapis.com/css?family=Open+Sans|Press+Start+2P" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=1">
-    <!-- p5.js: de bibliotheek die het tekenen in 3D makkelijk maakt (versie 1.9.4). -->
-    <script src="lib/p5.min.js"></script>
-    <script src="sketch.js?v=1"></script>
 </head>
-
 <body>
-    <!-- HUD (head-up display): levens, tokens en score bovenin beeld. -->
-    <div id="hud" class="hud verborgen">
-        <div>
-            <div id="hud-levens" class="hud-levens"></div>
-            <div><span class="munt"></span> &times; <span id="hud-tokens">0</span></div>
-        </div>
-        <div class="hud-score">
-            <span id="hud-hi"></span>
-            <span id="hud-score">00000</span>
-        </div>
-    </div>
-
-    <!-- Beginscherm -->
-    <div id="beginscherm" class="scherm">
-        <div class="kaart">
-            <h1 class="titel">PIRATE TOKEN HUNT</h1>
-            <p class="ondertitel">3D-editie</p>
-            <p>Ren over het strand, ontwijk de tonnen en verzamel gouden tokens!</p>
-
-            <h2>Kies je moeilijkheid</h2>
-            <div class="knoppen">
-                <button class="moeilijkheid-knop" data-moeilijkheid="makkelijk">1. Makkelijk</button>
-                <button class="moeilijkheid-knop" data-moeilijkheid="normaal">2. Normaal</button>
-                <button class="moeilijkheid-knop" data-moeilijkheid="moeilijk">3. Moeilijk</button>
-            </div>
-            <p class="moeilijkheid-info"></p>
-
-            <button class="start-knop" data-actie="start">START</button>
-            <p class="klein">of druk op <b>spatie</b></p>
-
-            <div class="kolommen">
-                <div class="kader">
-                    <h2>Besturing</h2>
-                    <table>
-                        <tr><td><kbd>&larr;</kbd> <kbd>&rarr;</kbd></td><td>van baan wisselen</td></tr>
-                        <tr><td><kbd>spatie</kbd> / <kbd>&uarr;</kbd></td><td>springen</td></tr>
-                        <tr><td>2&times; <kbd>spatie</kbd></td><td>dubbele sprong</td></tr>
-                        <tr><td>telefoon</td><td>veeg = baan, tik = spring</td></tr>
-                        <tr><td><span class="munt"></span> token</td><td>+10 punten</td></tr>
-                    </table>
-                </div>
-                <div class="kader">
-                    <h2>Highscores</h2>
-                    <table id="highscore-lijst"></table>
-                </div>
-            </div>
-            <p class="klein"><a href="../">&larr; Terug naar de 2D-versie</a></p>
-        </div>
-    </div>
-
-    <!-- Game-over-scherm -->
-    <div id="gameover" class="scherm verborgen">
-        <div class="kaart">
-            <h1 class="titel">GAME OVER</h1>
-            <p id="resultaat" class="resultaat"></p>
-            <h2>Kies je moeilijkheid</h2>
-            <div class="knoppen">
-                <button class="moeilijkheid-knop" data-moeilijkheid="makkelijk">1. Makkelijk</button>
-                <button class="moeilijkheid-knop" data-moeilijkheid="normaal">2. Normaal</button>
-                <button class="moeilijkheid-knop" data-moeilijkheid="moeilijk">3. Moeilijk</button>
-            </div>
-            <p class="moeilijkheid-info"></p>
-            <button class="start-knop" data-actie="start">OPNIEUW</button>
-            <p class="klein">of druk op <b>spatie</b></p>
-        </div>
-    </div>
+    <p>Het spel is verhuisd. <a href="../">Klik hier als je niet automatisch wordt doorgestuurd.</a></p>
 </body>
-
 </html>
