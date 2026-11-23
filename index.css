@@ -194,6 +194,23 @@ html, body {
   background: #6b4220;
 }
 
+/* AANPASSING 12: knop naar de 3D-versie. */
+.knop-3d {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 8px 18px;
+  border: 2px solid #3d2412;
+  border-radius: 8px;
+  background: #f4c430;
+  color: #3d2412;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.knop-3d:hover {
+  background: #ffd84d;
+}
+
 /* AANPASSING 10: een gouden muntje gemaakt met alleen CSS. */
 .munt {
   display: inline-block;

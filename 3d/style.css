@@ -1,0 +1,210 @@
+/* Pirate Token Hunt 3D: opmaak van de schermen en de HUD.
+ * Het 3D-beeld zelf wordt door p5.js op een <canvas> getekend. */
+
+:root {
+  --lucht: #bfe6ff;
+  --tekst: #3d3d3d;
+  --hout: #8b5a2b;
+  --hout-donker: #3d2412;
+  --goud: #f4c430;
+  --goud-rand: #b8860b;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;           /* geen scrollbalken, het spel vult het scherm */
+  background: var(--lucht);
+  font-family: 'Open Sans', sans-serif;
+  color: var(--tekst);
+  touch-action: none;         /* op telefoons niet scrollen/zoomen bij vegen */
+}
+
+canvas {
+  display: block;
+}
+
+.verborgen {
+  display: none !important;
+}
+
+/* ---------- HUD ---------- */
+.hud {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 16px;
+  font-size: 18px;
+  font-weight: bold;
+  pointer-events: none;        /* klikken gaan door de HUD heen */
+  z-index: 5;
+}
+
+.hud-levens {
+  color: #c0392b;
+  letter-spacing: 2px;
+}
+
+.hud-score {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 14px;
+}
+
+#hud-hi {
+  opacity: 0.6;
+  margin-right: 12px;
+}
+
+/* ---------- Schermen (begin en game over) ---------- */
+.scherm {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  overflow-y: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+  background: rgba(191, 230, 255, 0.55);   /* doorzichtig: je ziet het strand erachter */
+  text-align: center;
+}
+
+.kaart {
+  width: 100%;
+  max-width: 560px;
+  margin: auto 0;
+  padding: 16px;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.88);
+  border: 3px solid var(--tekst);
+  border-radius: 12px;
+}
+
+.titel {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(18px, 5.5vw, 32px);
+  line-height: 1.5;
+  margin: 4px 0;
+}
+
+.ondertitel {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  color: var(--hout);
+  margin: 0 0 8px;
+}
+
+h2 {
+  font-size: 1em;
+  margin: 14px 0 8px;
+}
+
+.klein {
+  font-size: 0.9em;
+  margin: 6px 0 0;
+}
+
+.knoppen {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.moeilijkheid-knop {
+  font: inherit;
+  padding: 6px 12px;
+  border: 2px solid var(--tekst);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--tekst);
+  cursor: pointer;
+}
+
+.moeilijkheid-knop.gekozen {
+  background: var(--tekst);
+  color: #fff;
+}
+
+.moeilijkheid-info {
+  font-size: 0.85em;
+  margin: 8px 0 4px;
+}
+
+.start-knop {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 18px;
+  margin-top: 6px;
+  padding: 14px 36px;
+  border: 3px solid var(--hout-donker);
+  border-radius: 8px;
+  background: var(--hout);
+  color: #fff6c8;
+  cursor: pointer;
+}
+
+.start-knop:hover {
+  background: #6b4220;
+}
+
+.resultaat {
+  font-weight: bold;
+  color: var(--hout);
+}
+
+.kolommen {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.kader {
+  flex: 1 1 220px;
+  padding: 4px 12px 12px;
+  border: 2px solid var(--tekst);
+  border-radius: 8px;
+}
+
+.kader table {
+  margin: 0 auto;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.kader td {
+  padding: 3px 8px;
+}
+
+.kader td:first-child {
+  white-space: nowrap;
+}
+
+kbd {
+  display: inline-block;
+  padding: 0 5px;
+  border: 1px solid var(--tekst);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.85em;
+}
+
+.munt {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--goud);
+  border: 2px solid var(--goud-rand);
+  vertical-align: middle;
+}
+
+a {
+  color: var(--hout);
+}
