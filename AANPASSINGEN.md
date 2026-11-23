@@ -1,6 +1,6 @@
 # Aanpassingen aan de T-Rex Runner
 
-Het origineel is het dinospel uit Google Chrome dat je krijgt als je geen internet hebt. Ik heb het spel op elf punten aangepast. De wijzigingen staan in `index.js`, `index.css` en `index.html` en zijn in de code te vinden met de zoekterm `AANPASSING`.
+Het origineel is het dinospel uit Google Chrome dat je krijgt als je geen internet hebt. Ik heb het spel op twaalf punten aangepast. De wijzigingen staan in `index.js`, `index.css` en `index.html` en zijn in de code te vinden met de zoekterm `AANPASSING`.
 
 | # | Aanpassing | Wat het doet |
 |---|------------|--------------|
@@ -15,6 +15,7 @@ Het origineel is het dinospel uit Google Chrome dat je krijgt als je geen intern
 | 9 | Nieuwe naam | Het spel heet nu **Pirate Token Hunt** |
 | 10 | Gouden tokens | Verzamel draaiende munten voor +10 punten per stuk |
 | 11 | Piratenthema | Dino met piratenhoed en ooglapje, tonnen, zee en strand |
+| 12 | 3D-versie | Een nieuwe 3D-versie, gemaakt met **p5.js**, in de map `3d/` |
 
 ---
 
@@ -243,6 +244,72 @@ Op het beginscherm staat in de besturingstabel een muntje dat alleen met CSS is 
 
 ---
 
+## Aanpassing 12: 3D-versie met p5.js
+
+**Idee:** het spel in echt 3D: de camera hangt achter de dino, die over een strand met palmbomen rent. Er zijn **drie banen**: met ← en → wissel je van baan om tonnen te ontwijken, en je kunt nog steeds (dubbel) springen. De 3D-versie staat in de map `3d/` en is te openen met de knop **Speel in 3D** op het beginscherm.
+
+De 3D-versie is **opnieuw geschreven** met de bibliotheek **p5.js** (versie 1.9.4), in de 3D-modus `WEBGL`. Het originele spel gebruikt plaatjes uit een sprite sheet en dat kan niet in 3D. De **regels** zijn wel hetzelfde gebleven: levens, dubbele sprong, tokens, drie moeilijkheden, highscores en een beginscherm.
+
+| Bestand | Wat erin staat |
+|---|---|
+| `3d/index.html` | Beginscherm, game-over-scherm en HUD (levens, tokens, score), in gewone HTML |
+| `3d/style.css` | Opmaak van die schermen |
+| `3d/sketch.js` | Het spel zelf: logica en 3D-tekenen |
+| `3d/lib/p5.min.js` | De p5.js-bibliotheek (staat in de repository zelf, zodat het spel niet afhangt van een andere website) |
+
+### Hoe p5.js werkt
+p5.js roept zelf twee functies aan:
+- `setup()` één keer bij het starten. Hier maakt `createCanvas(windowWidth, windowHeight, WEBGL)` een canvas zo groot als het venster, in 3D-modus.
+- `draw()` daarna steeds opnieuw, zo'n 60 keer per seconde. Dit is de **game loop**. Elke keer gebeuren er twee dingen: `bijwerken(dt)` verplaatst alles en controleert botsingen, en `tekenen()` tekent de hele wereld opnieuw.
+
+`dt` is de tijd sinds het vorige frame in seconden (uit p5's `deltaTime`). Alle bewegingen worden vermenigvuldigd met `dt`, zodat het spel op een snelle en een langzame computer even snel loopt.
+
+### Coördinaten in 3D
+In p5.js WEBGL loopt **x naar rechts, y naar beneden en z naar je toe**. Wij denken met "y = omhoog", daarom staat bij het tekenen steeds `translate(x, -y, z)`. De dino kijkt in de **negatieve z-richting**.
+
+**Truc:** de dino rent niet echt vooruit. Hij blijft op z = 0 staan, en alle tonnen, tokens en palmbomen schuiven elk frame naar hem toe (`ton.z += stap`). Nieuwe voorwerpen verschijnen ver weg (z = −2600) en worden verwijderd als ze achter de camera zijn. Zo hoeft de camera nooit te bewegen en worden de getallen nooit heel groot.
+
+### Tekenen met vormen
+Er zijn geen 3D-modellen gebruikt: alles is opgebouwd uit p5.js-basisvormen.
+- **Dino:** allemaal `box()`-blokjes (lijf, kop, staart, poten, armpjes). De hulpfunctie `blokje(x, y, z, b, h, d)` zet een blok op de juiste plek. De poten bewegen met `sin(tijd * 18)`: een sinus gaat tussen −1 en 1 op en neer, en de twee poten bewegen tegengesteld (`+loop` en `-loop`).
+- **Hoed en ooglapje:** zwarte blokken met een gouden band en een wit doodshoofdje.
+- **Ton:** `cylinder()`s: een bruine ton, een iets dikkere cilinder in het midden voor de bolle buik, en grijze ringen als ijzeren banden.
+- **Token:** een platte gouden cilinder die met `rotateY(tijd * 4)` draait. `specularMaterial()` maakt hem glanzend, als echt goud.
+- **Palmboom:** een scheve stam van cilinders met zes groene "bladeren" (platte dozen), rondom gedraaid met `rotateY(i * TWO_PI / 6)`.
+- **Strand en zee:** grote vlakken (`plane()`), met `rotateX(HALF_PI)` plat gelegd.
+
+`push()` en `pop()` onthouden en herstellen de positie en draaiing. Zo hebben `translate()` en `rotate()` voor het ene voorwerp geen invloed op het volgende.
+
+### Camera, licht en schaduw
+- `camera(...)` zet het "oog" achter en boven de dino en laat het schuin naar voren kijken. Op een staand telefoonscherm gaat de camera verder weg, zodat alle drie de banen in beeld blijven.
+- `ambientLight()` geeft licht van alle kanten. `directionalLight()` is zonlicht uit één richting. Daardoor krijgen vormen lichte en donkere kanten, en dat geeft **diepte**.
+- De **schaduw** onder de dino is nep: een halfdoorzichtige ellips op de grond, die met `map()` kleiner wordt naarmate de dino hoger springt.
+
+### Bewegen en springen
+- **Baan wisselen:** de dino kiest een baan (0, 1 of 2) en schuift daar met `lerp()` (*linear interpolation*, lineaire interpolatie) vloeiend naartoe. Elk frame gaat hij een stukje dichter bij het doel. `constrain()` zorgt dat de baan tussen 0 en 2 blijft.
+- **Springen (natuurkunde):** de zwaartekracht verandert de snelheid (`vy -= ZWAARTEKRACHT * dt`) en de snelheid verandert de hoogte (`y += vy * dt`). Dit is dezelfde manier van rekenen als in de natuurkunde: *v = v₀ − g·t* stap voor stap. De maximale hoogte is *v² / 2g* = 760² / (2 · 2200) ≈ 131 eenheden, en dat is genoeg om over een ton van 70 hoog te springen.
+
+### Botsingen in 3D
+- **Dino tegen ton:** een **AABB-test** (*Axis-Aligned Bounding Box*: een denkbeeldige doos om elk voorwerp, met de zijden langs de assen). Er is een botsing als de dozen in alle drie de richtingen overlappen: in x (zelfde baan), in z (op dezelfde plek) en in y (de dino is niet hoog genoeg gesprongen).
+- **Dino tegen token:** de afstand in 3D met **Pythagoras**: dx² + dy² + dz² < r².
+
+### Eindeloos lijkende wereld
+De streepjes in het zand en de golfjes in de zee schuiven mee met `afstand % 200` (de rest na delen door 200). Na 200 eenheden springen ze terug naar het begin. Omdat ze er dan weer precies hetzelfde uitzien, merk je dat niet, en lijkt het alsof je eindeloos vooruit rent.
+
+### Rijen tonnen
+In elke rij staan 1 of 2 tonnen, nooit 3: `shuffle([0, 1, 2])` zet de banen in willekeurige volgorde en de eerste 1 of 2 krijgen een ton. Zo is er altijd een vrije baan, en het spel is nooit onmogelijk.
+
+### Opruimen met filter()
+`tonnen = tonnen.filter(ton => ton.z < ACHTER_CAMERA && !ton.geraakt)` maakt een nieuwe lijst met alleen de tonnen die nog in beeld zijn en niet geraakt zijn. Dit is korter en veiliger dan zelf met `splice()` elementen weghalen (vergelijk aanpassing 10).
+
+### Menu's en HUD in HTML
+De schermen en de score staan niet in het 3D-beeld, maar in gewone HTML eroverheen (`position: fixed`). Tekst in WEBGL tekenen is lastig, en zo kun je de opmaak gewoon met CSS doen.
+
+### Besturing op een telefoon
+Een `touchstart`- en `touchend`-event meten waar je vinger begint en eindigt. Een horizontale veeg van meer dan 40 pixels wisselt van baan, en een tik laat de dino springen.
+
+---
+
 ## Testen
 
 Ik heb het spel automatisch getest in een browser (Playwright, Chromium):
@@ -269,6 +336,12 @@ Ik heb het spel automatisch getest in een browser (Playwright, Chromium):
 | Buit na game over | "Je buit: 2 gouden tokens!" ✔ |
 | Hoed blijft op het hoofd bij staan, rennen en bukken | ✔ (screenshots) |
 | Tonnen, zee en strand zichtbaar, geen JavaScript-fouten | ✔ |
+| 3D: baan wisselen met ← | baan 1 → 0 ✔ |
+| 3D: sprong en dubbele sprong | y = 60 → 133 ✔ |
+| 3D: token vlak voor de dino | tokens 0 → 1 ✔ |
+| 3D: ton vlak voor de dino | levens 5 → 4 ✔ |
+| 3D: laatste leven kwijt | game-over-scherm met score en buit ✔ |
+| 3D: telefoonformaat (390 × 844) | alle banen in beeld ✔ |
 | JavaScript-fouten | geen ✔ |
 
 ## Spelen
